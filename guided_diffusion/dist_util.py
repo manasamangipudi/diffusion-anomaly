@@ -13,7 +13,7 @@ import torch.distributed as dist
 
 # Change this to reflect your cluster layout.
 # The GPU for a given rank is (rank % GPUS_PER_NODE).
-GPUS_PER_NODE = 8
+#GPUS_PER_NODE = 1
 
 SETUP_RETRY_COUNT = 3
 
@@ -23,43 +23,49 @@ def setup_dist():
     Setup a distributed process group.
     """
     if dist.is_initialized():
+        print("THIS IS ALL THE ISSUE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0'#f"{MPI.COMM_WORLD.Get_rank() % GPUS_PER_NODE}"
+    else :
+        print("THIS IS NOT AN ISSUEEEEE!!!!!!!!!!!!!!!!!!!!!!!!!")
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"#f"{MPI.COMM_WORLD.Get_rank() % GPUS_PER_NODE}"
+    os.environ["RANK"] = "0"
+    os.environ["WORLD_SIZE"] = "1"
 
-    #comm = MPI.COMM_WORLD
-  #  print('commworld, 'f"{MPI.COMM_WORLD.Get_rank() % GPUS_PER_NODE}", comm)
-    backend = "gloo" if not th.cuda.is_available() else "nccl"
-   # print('commrank', comm.rank)
-   # print('commsize', comm.size)
+    #os.environ["WORLD_SIZE"] = "1"
 
-    if backend == "gloo":
-        hostname = "localhost"
-    else:
-        hostname = socket.gethostbyname(socket.getfqdn())
-    os.environ["MASTER_ADDR"] = '127.0.1.1'#comm.bcast(hostname, root=0)
-    os.environ["RANK"] = '0'#str(comm.rank)
-    os.environ["WORLD_SIZE"] = '1'#str(comm.size)
-   # print('commmasteraddr', comm.bcast(hostname, root=0))
+    # backend = "gloo" if not th.cuda.is_available() else "nccl"
+    #
+    #
+    # if backend == "gloo":
+    #     hostname = "localhost"
+    # else:
+    #     hostname = socket.gethostbyname(socket.getfqdn())
+    #os.environ["MASTER_ADDR"] = '127.0.1.1'#comm.bcast(hostname, root=0)
+    #os.environ["RANK"] = '0'#str(comm.rank)
+    #os.environ["WORLD_SIZE"] = '1'#str(comm.size)
 
-   # port = comm.bcast(_find_free_port(), root=0)
-   # print('port', port)
-   # os.environ["MASTER_PORT"] = str(port)
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(("", 0))
-    s.listen(1)
-    port = s.getsockname()[1]
-    s.close()
-    print('port2', port)
-    os.environ["MASTER_PORT"] = str(port)
-    dist.init_process_group(backend=backend, init_method="env://")
+    # s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # s.bind(("", 0))
+    # s.listen(1)
+    # port = s.getsockname()[1]
+    # s.close()
+    # print('port2', port)
+    # os.environ["MASTER_PORT"] = str(port)
+    # dist.init_process_group(backend=backend, init_method="env://")
 
 
 def dev():
     """
     Get the device to use for torch.distributed.
     """
+    print("CUDA AVAILABILITY!!!!!!!!!!!")
+    print(th.cuda.is_available())
+    print(th.cuda.device_count())
+
+    print("CHECK HEREEEEEEEEEEE")
     if th.cuda.is_available():
-        return th.device(f"cuda")
+        return th.device("cuda",0)
     return th.device("cpu")
 
 
@@ -67,16 +73,12 @@ def load_state_dict(path, **kwargs):
     """
     Load a PyTorch file without redundant fetches across MPI ranks.
     """
-    #print('mpicommworldgetrank', MPI.COMM_WORLD.Get_rank())
     mpigetrank=0
-   # if MPI.COMM_WORLD.Get_rank() == 0:
     if mpigetrank==0:
         with bf.BlobFile(path, "rb") as f:
             data = f.read()
     else:
         data = None
-   # data = MPI.COMM_WORLD.bcast(data)
-  #  print('mpibacst', MPI.COMM_WORLD.bcast(data))
     return th.load(io.BytesIO(data), **kwargs)
 
 
@@ -87,7 +89,6 @@ def sync_params(params):
     for p in params:
         with th.no_grad():
             dist.broadcast(p, 0)
-
 
 def _find_free_port():
     try:
