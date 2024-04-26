@@ -176,10 +176,16 @@ class MixedPrecisionTrainer:
     def backward(self, loss: th.Tensor):
         if self.use_fp16:
             loss_scale = 2 ** self.lg_loss_scale
+            #loss.retains_grad()
             (loss * loss_scale).backward()
         else:
+            print("fp16 loss!!!!!!!!!!")
+            print(loss)
+            if loss is True or loss is False :
+              loss.retains_grad()
             loss.backward()
-            print('grad0', loss.grad)
+            print('grad0', loss.
+                  grad)
 
     def optimize(self, opt: th.optim.Optimizer):
         if self.use_fp16:

@@ -28,44 +28,39 @@ def setup_dist():
     else :
         print("THIS IS NOT AN ISSUEEEEE!!!!!!!!!!!!!!!!!!!!!!!!!")
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"#f"{MPI.COMM_WORLD.Get_rank() % GPUS_PER_NODE}"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"  #f"{MPI.COMM_WORLD.Get_rank() % GPUS_PER_NODE}"
     os.environ["RANK"] = "0"
     os.environ["WORLD_SIZE"] = "1"
 
     #os.environ["WORLD_SIZE"] = "1"
 
-    # backend = "gloo" if not th.cuda.is_available() else "nccl"
+    backend = "gloo" if not th.cuda.is_available() else "nccl"
     #
     #
-    # if backend == "gloo":
-    #     hostname = "localhost"
-    # else:
-    #     hostname = socket.gethostbyname(socket.getfqdn())
-    #os.environ["MASTER_ADDR"] = '127.0.1.1'#comm.bcast(hostname, root=0)
+    if backend == "gloo":
+         hostname = "localhost"
+    else:
+         hostname = socket.gethostbyname(socket.getfqdn())
+    os.environ["MASTER_ADDR"] = '127.0.1.1'#comm.bcast(hostname, root=0)
     #os.environ["RANK"] = '0'#str(comm.rank)
     #os.environ["WORLD_SIZE"] = '1'#str(comm.size)
 
-    # s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # s.bind(("", 0))
-    # s.listen(1)
-    # port = s.getsockname()[1]
-    # s.close()
-    # print('port2', port)
-    # os.environ["MASTER_PORT"] = str(port)
-    # dist.init_process_group(backend=backend, init_method="env://")
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("", 0))
+    s.listen(1)
+    port = s.getsockname()[1]
+    s.close()
+    print('port2', port)
+    os.environ["MASTER_PORT"] = str(port)
+    dist.init_process_group(backend=backend, init_method="env://")
 
 
 def dev():
     """
     Get the device to use for torch.distributed.
     """
-    print("CUDA AVAILABILITY!!!!!!!!!!!")
-    print(th.cuda.is_available())
-    print(th.cuda.device_count())
-
-    print("CHECK HEREEEEEEEEEEE")
     if th.cuda.is_available():
-        return th.device("cuda",0)
+        return th.device(f"cuda")
     return th.device("cpu")
 
 
