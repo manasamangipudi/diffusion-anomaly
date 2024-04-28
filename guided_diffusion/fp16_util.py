@@ -179,11 +179,9 @@ class MixedPrecisionTrainer:
             #loss.retains_grad()
             (loss * loss_scale).backward()
         else:
-            print("fp16 loss!!!!!!!!!!")
-            print(loss)
-            if loss is True or loss is False :
-              loss.retains_grad()
+            loss.retain_grad()
             loss.backward()
+            print(loss)
             print('grad0', loss.
                   grad)
 

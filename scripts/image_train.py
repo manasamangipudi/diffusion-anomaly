@@ -81,7 +81,7 @@ def main():
         lr_anneal_steps=args.lr_anneal_steps,
         dataset=args.dataset
     ).run_loop()
-
+    th.cuda.empty_cache()
 
 def create_argparser():
     defaults = dict(

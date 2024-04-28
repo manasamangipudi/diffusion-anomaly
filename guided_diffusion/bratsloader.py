@@ -36,7 +36,9 @@ class BRATSDataset(torch.utils.data.Dataset):
                 # extract all files as channels
                 for f in files:
                     seqtype = f.split('_')[3]
+                    print(seqtype)
                     datapoint[seqtype] = os.path.join(root, f)
+                    print(datapoint[seqtype])
                 assert set(datapoint.keys()) == self.seqtypes_set, \
                     f'datapoint is incomplete, keys are {datapoint.keys()}'
                 self.database.append(datapoint)
